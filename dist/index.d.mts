@@ -9,5 +9,7 @@ interface IconBuilderConfig {
     generateReadme?: boolean;
 }
 declare function main(userConfig?: IconBuilderConfig): Promise<void>;
+declare function setup(): Promise<void>;
 export type { IconBuilderConfig };
 export default main;
+export { setup };

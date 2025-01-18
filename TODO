@@ -1,0 +1,14 @@
+- [ ] Write Tests
+- [ ] Create a set of default configuration options depending on the project type
+  - [ ] Next.js Pages
+  - [ ] Next.js API Routes
+  - [ ] Remix
+  - [ ] SvelteKit
+  - [ ] Astro
+  - [ ] Laravel
+- [ ] Updates to README
+ - [ ] React Component
+ - [ ] Vue Component
+ - [ ] SvelteKit Component
+ - [ ] Astro Component
+ - [ ] Laravel Component
