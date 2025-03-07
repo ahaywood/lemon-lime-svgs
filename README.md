@@ -31,7 +31,7 @@ npx lemon-lime-svgs setup
 3. Generate the sprite:
 
 ```bash
-npm run build:icons
+npm run icons
 ```
 
 ## Configuration
@@ -71,7 +71,7 @@ SVG_GENERATE_README=true
 
 - `npx lemon-lime-svgs setup` - Interactive setup wizard
 - `npx lemon-lime-svgs` - Generate sprite file
-- `npm run build:icons` - Generate sprite (after setup)
+- `npm run icons` - Generate sprite (after setup)
 
 ## Contributing
 
