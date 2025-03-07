@@ -79,8 +79,57 @@ Pull requests are welcome! For major changes, please open an issue first to disc
 
 ## License
 
-ISC
+[GNU Lesser General Public License (LGPL)](./LICENSE.md)
 
 ## Author
 
 Amy (Haywood) Dutton - [@ahaywood](https://github.com/ahaywood)
+
+## Framework-Specific Configurations
+
+Lemon Lime SVGs provides optimized default configurations for popular frameworks:
+
+### Next.js (Pages Router)
+
+```env
+SVG_INPUT_DIR="./other/svg-icons"
+SVG_OUTPUT_DIR="./public/images/icons"
+SVG_TYPES_DIR="./src/types/icons"
+SVG_TYPE_FILENAME="icons.d.ts"
+```
+
+### Next.js (App Router)
+
+```env
+SVG_INPUT_DIR="./src/other/svg-icons"
+SVG_OUTPUT_DIR="./public/images/icons"
+SVG_TYPES_DIR="./src/types/icons"
+SVG_TYPE_FILENAME="icons.d.ts"
+```
+
+### Remix
+
+```env
+SVG_INPUT_DIR="./other/svg-icons"
+SVG_OUTPUT_DIR="./public/images/icons"
+SVG_TYPES_DIR="./app/types/icons"
+SVG_TYPE_FILENAME="icons.d.ts"
+```
+
+### SvelteKit
+
+```env
+SVG_INPUT_DIR="./other/svg-icons"
+SVG_OUTPUT_DIR="./static/images/icons"
+SVG_TYPES_DIR="./src"
+SVG_TYPE_FILENAME="icons.d.ts"
+```
+
+### Astro
+
+```env
+SVG_INPUT_DIR="./other/svg-icons"
+SVG_OUTPUT_DIR="./public/images/icons"
+SVG_TYPES_DIR="./src"
+SVG_TYPE_FILENAME="icons.d.ts"
+```

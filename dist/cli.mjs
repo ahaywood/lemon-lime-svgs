@@ -2,7 +2,7 @@
 import main, { setup } from './index.mjs';
 import chalk from 'chalk';
 const command = process.argv[2];
-console.log(chalk.yellow('🍋🍋 SVG Sprite Builder 🍋🍋\n'));
+console.log(chalk.yellow('🍋🍋 LEMON LIME SVGs 🍋🍋\n'));
 switch (command) {
     case 'setup':
         setup().catch((error) => {

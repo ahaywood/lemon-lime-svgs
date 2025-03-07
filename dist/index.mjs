@@ -17,6 +17,38 @@ const defaultConfig = {
     verbose: process.env.SVG_VERBOSE === 'true' ? true : false,
     generateReadme: process.env.SVG_GENERATE_README === 'true' ? true : false
 };
+const frameworkConfigs = {
+    'next-pages': {
+        inputDir: './other/svg-icons',
+        outputDir: './public/images/icons',
+        typesDir: './src/types/icons',
+        typeFilename: 'icons.d.ts'
+    },
+    'next-app': {
+        inputDir: './src/other/svg-icons',
+        outputDir: './public/images/icons',
+        typesDir: './src/types/icons',
+        typeFilename: 'icons.d.ts'
+    },
+    remix: {
+        inputDir: './other/svg-icons',
+        outputDir: './public/images/icons',
+        typesDir: './app/types/icons',
+        typeFilename: 'icons.d.ts'
+    },
+    sveltekit: {
+        inputDir: './other/svg-icons',
+        outputDir: './static/images/icons',
+        typesDir: './src',
+        typeFilename: 'icons.d.ts'
+    },
+    astro: {
+        inputDir: './other/svg-icons',
+        outputDir: './public/images/icons',
+        typesDir: './src',
+        typeFilename: 'icons.d.ts'
+    }
+};
 async function main(userConfig = {}) {
     const config = { ...defaultConfig, ...userConfig };
     const cwd = process.cwd();
@@ -153,17 +185,50 @@ async function setup() {
         output: process.stdout
     });
     console.log(chalk.yellow('🍋 Setting up SVG Sprite Builder configuration...\n'));
-    // Get all user input first
+    // Ask for framework first
+    console.log(chalk.cyan('Available frameworks:'));
+    console.log(chalk.gray('  1. Next.js (Pages Router)'));
+    console.log(chalk.gray('  2. Next.js (App Router)'));
+    console.log(chalk.gray('  3. Remix'));
+    console.log(chalk.gray('  4. SvelteKit'));
+    console.log(chalk.gray('  5. Astro'));
+    console.log(chalk.gray('  0. Custom configuration'));
+    console.log('');
+    const frameworkChoice = await rl.question(chalk.cyan('🍋 Select your framework (0-5): '));
+    console.log('');
+    // Create a copy of the base config
+    let configDefaults = { ...defaultConfig };
+    switch (frameworkChoice) {
+        case '1':
+            configDefaults = { ...configDefaults, ...frameworkConfigs['next-pages'] };
+            break;
+        case '2':
+            configDefaults = { ...configDefaults, ...frameworkConfigs['next-app'] };
+            break;
+        case '3':
+            configDefaults = { ...configDefaults, ...frameworkConfigs['remix'] };
+            break;
+        case '4':
+            configDefaults = { ...configDefaults, ...frameworkConfigs['sveltekit'] };
+            break;
+        case '5':
+            configDefaults = { ...configDefaults, ...frameworkConfigs['astro'] };
+            break;
+        case '0':
+        default:
+            // Use existing defaults
+            break;
+    }
+    // Rest of the setup using the selected configDefaults...
     const config = {
-        inputDir: await rl.question(chalk.cyan(`🍋 Input directory for SVG files ${chalk.gray(`(default: ${defaultConfig.inputDir})`)}: `)) || defaultConfig.inputDir,
-        outputDir: await rl.question(chalk.cyan(`🍋 Output directory for sprite ${chalk.gray(`(default: ${defaultConfig.outputDir})`)}: `)) || defaultConfig.outputDir,
-        typesDir: await rl.question(chalk.cyan(`🍋 Directory for TypeScript types ${chalk.gray(`(default: ${defaultConfig.typesDir})`)}: `)) || defaultConfig.typesDir,
-        spriteFilename: await rl.question(chalk.cyan(`🍋 Sprite filename ${chalk.gray(`(default: ${defaultConfig.spriteFilename})`)}: `)) || defaultConfig.spriteFilename,
-        typeFilename: await rl.question(chalk.cyan(`🍋 Type definition filename ${chalk.gray(`(default: ${defaultConfig.typeFilename})`)}: `)) || defaultConfig.typeFilename,
+        inputDir: await rl.question(chalk.cyan(`🍋 Input directory for SVG files ${chalk.gray(`(default: ${configDefaults.inputDir})`)}: `)) || configDefaults.inputDir,
+        outputDir: await rl.question(chalk.cyan(`🍋 Output directory for sprite ${chalk.gray(`(default: ${configDefaults.outputDir})`)}: `)) || configDefaults.outputDir,
+        typesDir: await rl.question(chalk.cyan(`🍋 Directory for TypeScript types ${chalk.gray(`(default: ${configDefaults.typesDir})`)}: `)) || configDefaults.typesDir,
+        spriteFilename: await rl.question(chalk.cyan(`🍋 Sprite filename ${chalk.gray(`(default: ${configDefaults.spriteFilename})`)}: `)) || configDefaults.spriteFilename,
+        typeFilename: await rl.question(chalk.cyan(`🍋 Type definition filename ${chalk.gray(`(default: ${configDefaults.typeFilename})`)}: `)) || configDefaults.typeFilename,
         verbose: (await rl.question(chalk.cyan(`🍋 Enable verbose logging? ${chalk.gray('(y/N)')}: `))).toLowerCase() === 'y',
         generateReadme: (await rl.question(chalk.cyan(`🍋 Generate README? ${chalk.gray('(Y/n)')}: `))).toLowerCase() !== 'n'
     };
-    console.log(''); // Add blank line
     // Handle package.json
     const pkgPath = path.join(cwd, 'package.json');
     let pkg = {};
@@ -184,7 +249,7 @@ async function setup() {
     const envPath = path.join(cwd, '.env');
     let shouldUpdateEnv = !await fsExtra.pathExists(envPath);
     if (await fsExtra.pathExists(envPath)) {
-        const overwrite = await rl.question('😱  .env file already exists. Overwrite? (y/N): ');
+        const overwrite = await rl.question(chalk.red('😱  .env file already exists. Overwrite? ') + chalk.gray('(y/N): '));
         shouldUpdateEnv = overwrite.toLowerCase() === 'y';
     }
     // Now we can safely close readline
@@ -200,7 +265,9 @@ async function setup() {
         console.log(chalk.green('✅ Added build:icons script to package.json'));
     }
     else {
+        console.log('');
         console.log('Skipping script addition');
+        console.log('');
     }
     // Update .env if needed
     if (shouldUpdateEnv) {
@@ -218,7 +285,9 @@ SVG_GENERATE_README=${config.generateReadme}
         console.log(chalk.gray(envContent));
     }
     else {
+        console.log('');
         console.log('❌ Setup cancelled');
+        console.log('');
         process.exit(0);
     }
     console.log(chalk.green('✅ Created required directories'));
