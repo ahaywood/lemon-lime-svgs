@@ -34,7 +34,21 @@ npx lemon-lime-svgs setup
 npm run icons
 ```
 
+4. (Optional) Install a framework-specific Icon component:
+
+```bash
+npx lemon-lime-svgs component
+```
+
+This will add an Icon component to your project that makes it easy to use your SVG sprites. If a component already exists at the specified location, you'll be asked if you want to overwrite it.
+
 ## Configuration
+
+> **Note:** Starting from version 1.1.0, configuration is stored in package.json instead of .env. If you're upgrading from an earlier version, run `npx lemon-lime-svgs migrate` to move your configuration.
+>
+> The tool will automatically check if you have configuration set up. If not, it will prompt you to run the setup wizard. If you have configuration in an .env file but not in package.json, it will recommend running the migration script.
+>
+> During setup, you'll also be asked if you want to install an Icon component for your project. This saves you from running the component installation command separately.
 
 The setup wizard will help you configure:
 
@@ -45,16 +59,20 @@ The setup wizard will help you configure:
 - Verbose logging
 - README generation
 
-All settings are stored in your project's `.env` file and can be modified manually:
+All settings are stored in your project's `package.json` file under the `lemonLimeSvgs` key and can be modified manually:
 
-```
-SVG_INPUT_DIR="./other/svg-icons"
-SVG_OUTPUT_DIR="./public/images/icons"
-SVG_TYPES_DIR="./src/types"
-SVG_SPRITE_FILENAME="sprite.svg"
-SVG_TYPE_FILENAME="name.d.ts"
-SVG_VERBOSE=false
-SVG_GENERATE_README=true
+```json
+{
+  "lemonLimeSvgs": {
+    "inputDir": "other/svg-icons",
+    "outputDir": "public/images/icons",
+    "typesDir": "src/types",
+    "spriteFilename": "sprite.svg",
+    "typeFilename": "name.d.ts",
+    "verbose": false,
+    "generateReadme": false
+  }
+}
 ```
 
 ## Usage in Next.js
@@ -72,6 +90,8 @@ SVG_GENERATE_README=true
 - `npx lemon-lime-svgs setup` - Interactive setup wizard
 - `npx lemon-lime-svgs` - Generate sprite file
 - `npm run icons` - Generate sprite (after setup)
+- `npx lemon-lime-svgs migrate` - Migrate configuration from .env to package.json
+- `npx lemon-lime-svgs component` - Install icon component for your framework
 
 ## Contributing
 
@@ -91,45 +111,78 @@ Lemon Lime SVGs provides optimized default configurations for popular frameworks
 
 ### Next.js (Pages Router)
 
-```env
-SVG_INPUT_DIR="./other/svg-icons"
-SVG_OUTPUT_DIR="./public/images/icons"
-SVG_TYPES_DIR="./src/types/icons"
-SVG_TYPE_FILENAME="icons.d.ts"
+```json
+{
+  "lemonLimeSvgs": {
+    "inputDir": "./other/svg-icons",
+    "outputDir": "./public/images/icons",
+    "typesDir": "./src/types/icons",
+    "typeFilename": "icons.d.ts"
+  }
+}
 ```
 
 ### Next.js (App Router)
 
-```env
-SVG_INPUT_DIR="./src/other/svg-icons"
-SVG_OUTPUT_DIR="./public/images/icons"
-SVG_TYPES_DIR="./src/types/icons"
-SVG_TYPE_FILENAME="icons.d.ts"
+```json
+{
+  "lemonLimeSvgs": {
+    "inputDir": "./src/other/svg-icons",
+    "outputDir": "./public/images/icons",
+    "typesDir": "./src/types/icons",
+    "typeFilename": "icons.d.ts"
+  }
+}
 ```
 
 ### Remix
 
-```env
-SVG_INPUT_DIR="./other/svg-icons"
-SVG_OUTPUT_DIR="./public/images/icons"
-SVG_TYPES_DIR="./app/types/icons"
-SVG_TYPE_FILENAME="icons.d.ts"
+```json
+{
+  "lemonLimeSvgs": {
+    "inputDir": "./other/svg-icons",
+    "outputDir": "./public/images/icons",
+    "typesDir": "./app/types/icons",
+    "typeFilename": "icons.d.ts"
+  }
+}
 ```
 
 ### SvelteKit
 
-```env
-SVG_INPUT_DIR="./other/svg-icons"
-SVG_OUTPUT_DIR="./static/images/icons"
-SVG_TYPES_DIR="./src"
-SVG_TYPE_FILENAME="icons.d.ts"
+```json
+{
+  "lemonLimeSvgs": {
+    "inputDir": "./other/svg-icons",
+    "outputDir": "./static/images/icons",
+    "typesDir": "./src",
+    "typeFilename": "icons.d.ts"
+  }
+}
 ```
 
 ### Astro
 
-```env
-SVG_INPUT_DIR="./other/svg-icons"
-SVG_OUTPUT_DIR="./public/images/icons"
-SVG_TYPES_DIR="./src"
-SVG_TYPE_FILENAME="icons.d.ts"
+```json
+{
+  "lemonLimeSvgs": {
+    "inputDir": "./other/svg-icons",
+    "outputDir": "./public/images/icons",
+    "typesDir": "./src",
+    "typeFilename": "icons.d.ts"
+  }
+}
+```
+
+### React + Vite
+
+```json
+{
+  "lemonLimeSvgs": {
+    "inputDir": "./other/svg-icons",
+    "outputDir": "./public/images/icons",
+    "typesDir": "./src/types",
+    "typeFilename": "icons.d.ts"
+  }
+}
 ```

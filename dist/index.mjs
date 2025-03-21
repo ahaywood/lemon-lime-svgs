@@ -3,20 +3,50 @@ import * as path from 'node:path';
 import fsExtra from 'fs-extra';
 import { glob } from 'glob';
 import { parse } from 'node-html-parser';
-import dotenv from 'dotenv';
 import readline from 'node:readline/promises';
 import chalk from 'chalk';
-// Update dotenv config to look in the current working directory
-dotenv.config({ path: path.join(process.cwd(), '.env') });
-const defaultConfig = {
-    inputDir: process.env.SVG_INPUT_DIR || 'svg-icons',
-    outputDir: process.env.SVG_OUTPUT_DIR || 'public/images/icons',
-    typesDir: process.env.SVG_TYPES_DIR || 'public/images/icons',
-    spriteFilename: process.env.SVG_SPRITE_FILENAME || 'sprite.svg',
-    typeFilename: process.env.SVG_TYPE_FILENAME || 'name.d.ts',
-    verbose: process.env.SVG_VERBOSE === 'true' ? true : false,
-    generateReadme: process.env.SVG_GENERATE_README === 'true' ? true : false
+import { installComponent } from './install-component.mjs';
+// Default configuration that will be used if no package.json config is found
+const baseDefaultConfig = {
+    inputDir: 'other/svg-icons',
+    outputDir: 'public/images/icons',
+    typesDir: 'src/types',
+    spriteFilename: 'sprite.svg',
+    typeFilename: 'name.d.ts',
+    verbose: false,
+    generateReadme: false
 };
+// This will be populated with values from package.json if available
+let defaultConfig = { ...baseDefaultConfig };
+// Try to load config from package.json
+try {
+    const pkgPath = path.join(process.cwd(), 'package.json');
+    const pkg = JSON.parse(fsExtra.readFileSync(pkgPath, 'utf8'));
+    if (pkg.lemonLimeSvgs) {
+        defaultConfig = {
+            ...baseDefaultConfig,
+            ...pkg.lemonLimeSvgs
+        };
+    }
+}
+catch (error) {
+    // If package.json can't be read, use the base defaults
+    console.log(chalk.yellow('⚠️ Could not read package.json, using default configuration'));
+}
+// Check if .env file exists and contains SVG configuration
+let hasEnvConfig = false;
+try {
+    const envPath = path.join(process.cwd(), '.env');
+    if (fsExtra.existsSync(envPath)) {
+        const envContent = fsExtra.readFileSync(envPath, 'utf8');
+        hasEnvConfig = envContent.includes('SVG_INPUT_DIR') ||
+            envContent.includes('SVG_OUTPUT_DIR') ||
+            envContent.includes('SVG_TYPES_DIR');
+    }
+}
+catch (error) {
+    // Ignore errors when checking .env
+}
 const frameworkConfigs = {
     'next-pages': {
         inputDir: './other/svg-icons',
@@ -47,9 +77,60 @@ const frameworkConfigs = {
         outputDir: './public/images/icons',
         typesDir: './src',
         typeFilename: 'icons.d.ts'
+    },
+    'react-vite': {
+        inputDir: './other/svg-icons',
+        outputDir: './public/images/icons',
+        typesDir: './src/types',
+        typeFilename: 'icons.d.ts'
     }
 };
+// Check if configuration exists, otherwise prompt for setup
+async function checkConfiguration() {
+    const pkgPath = path.join(process.cwd(), 'package.json');
+    let hasPackageJsonConfig = false;
+    let hasEnvConfig = false;
+    try {
+        // Check if package.json has lemonLimeSvgs configuration
+        if (fsExtra.existsSync(pkgPath)) {
+            const pkg = JSON.parse(fsExtra.readFileSync(pkgPath, 'utf8'));
+            hasPackageJsonConfig = !!pkg.lemonLimeSvgs && Object.keys(pkg.lemonLimeSvgs).length > 0;
+        }
+        // Check if .env file exists and contains SVG configuration
+        const envPath = path.join(process.cwd(), '.env');
+        if (fsExtra.existsSync(envPath)) {
+            const envContent = fsExtra.readFileSync(envPath, 'utf8');
+            hasEnvConfig = envContent.includes('SVG_INPUT_DIR') ||
+                envContent.includes('SVG_OUTPUT_DIR') ||
+                envContent.includes('SVG_TYPES_DIR');
+        }
+        // If no configuration found, prompt for setup
+        if (!hasPackageJsonConfig && !hasEnvConfig) {
+            console.log(chalk.yellow('\n⚠️ No configuration found.'));
+            console.log(chalk.cyan('Please run the setup wizard to configure Lemon Lime SVGs:'));
+            console.log(chalk.white('  npx lemon-lime-svgs setup'));
+            return false;
+        }
+        // If only .env configuration found, recommend migration
+        if (!hasPackageJsonConfig && hasEnvConfig) {
+            console.log(chalk.yellow('\n⚠️ Found configuration in .env file but not in package.json.'));
+            console.log(chalk.cyan('We recommend migrating your configuration to package.json:'));
+            console.log(chalk.white('  npx lemon-lime-svgs migrate'));
+            console.log(chalk.gray('\nContinuing with .env configuration for now...'));
+        }
+        return true;
+    }
+    catch (error) {
+        console.error('Error checking configuration:', error);
+        return false;
+    }
+}
 async function main(userConfig = {}) {
+    // Check if configuration exists
+    const configExists = await checkConfiguration();
+    if (!configExists) {
+        return;
+    }
     const config = { ...defaultConfig, ...userConfig };
     const cwd = process.cwd();
     const inputDir = path.join(cwd, config.inputDir);
@@ -192,9 +273,10 @@ async function setup() {
     console.log(chalk.gray('  3. Remix'));
     console.log(chalk.gray('  4. SvelteKit'));
     console.log(chalk.gray('  5. Astro'));
+    console.log(chalk.gray('  6. React + Vite'));
     console.log(chalk.gray('  0. Custom configuration'));
     console.log('');
-    const frameworkChoice = await rl.question(chalk.cyan('🍋 Select your framework (0-5): '));
+    const frameworkChoice = await rl.question(chalk.cyan('🍋 Select your framework (0-6): '));
     console.log('');
     // Create a copy of the base config
     let configDefaults = { ...defaultConfig };
@@ -213,6 +295,9 @@ async function setup() {
             break;
         case '5':
             configDefaults = { ...configDefaults, ...frameworkConfigs['astro'] };
+            break;
+        case '6':
+            configDefaults = { ...configDefaults, ...frameworkConfigs['react-vite'] };
             break;
         case '0':
         default:
@@ -245,26 +330,19 @@ async function setup() {
         const overwrite = await rl.question(chalk.red('😱  icons script already exists. Overwrite? ') + chalk.gray('(y/N): '));
         shouldUpdatePackageJson = overwrite.toLowerCase() === 'y';
     }
-    // Check if .env exists and get overwrite permission
-    const envPath = path.join(cwd, '.env');
-    let shouldUpdateEnv = !await fsExtra.pathExists(envPath);
-    let shouldAppendToEnv = false;
-    if (await fsExtra.pathExists(envPath)) {
-        const envAction = await rl.question(chalk.yellow('🍋 .env file already exists. What would you like to do? ') +
-            chalk.gray('\n  1. Overwrite the file') +
-            chalk.gray('\n  2. Append SVG configuration to the file') +
-            chalk.gray('\n  3. Cancel setup') +
-            chalk.gray('\n Choose (1-3): '));
-        if (envAction === '1') {
-            shouldUpdateEnv = true;
-        }
-        else if (envAction === '2') {
-            shouldAppendToEnv = true;
+    // Check if package.json already has lemonLimeSvgs config
+    let shouldUpdateConfig = true;
+    if (pkg.lemonLimeSvgs) {
+        const configAction = await rl.question(chalk.yellow('🍋 lemonLimeSvgs configuration already exists in package.json. What would you like to do? ') +
+            chalk.gray('\n  1. Overwrite the configuration') +
+            chalk.gray('\n  2. Cancel setup') +
+            chalk.gray('\n Choose (1-2): '));
+        if (configAction === '1') {
+            shouldUpdateConfig = true;
         }
         else {
             // Cancel setup
-            shouldUpdateEnv = false;
-            shouldAppendToEnv = false;
+            shouldUpdateConfig = false;
         }
     }
     // Now we can safely close readline
@@ -276,7 +354,6 @@ async function setup() {
     // Update package.json if needed
     if (shouldUpdatePackageJson) {
         pkg.scripts['icons'] = 'lemon-lime-svgs';
-        await fsExtra.writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
         console.log(chalk.green('✅ Added icons script to package.json'));
     }
     else {
@@ -284,42 +361,23 @@ async function setup() {
         console.log('Skipping script addition');
         console.log('');
     }
-    // Update .env if needed
-    const envContent = `SVG_INPUT_DIR="${config.inputDir}"
-SVG_OUTPUT_DIR="${config.outputDir}"
-SVG_TYPES_DIR="${config.typesDir}"
-SVG_SPRITE_FILENAME="${config.spriteFilename}"
-SVG_TYPE_FILENAME="${config.typeFilename}"
-SVG_VERBOSE=${config.verbose}
-SVG_GENERATE_README=${config.generateReadme}
-`;
-    if (shouldUpdateEnv) {
-        await fsExtra.writeFile(envPath, envContent);
-        console.log(chalk.green('\n✅ Created .env file'));
+    // Update package.json config if needed
+    if (shouldUpdateConfig) {
+        // Add lemonLimeSvgs configuration to package.json
+        pkg.lemonLimeSvgs = {
+            inputDir: config.inputDir,
+            outputDir: config.outputDir,
+            typesDir: config.typesDir,
+            spriteFilename: config.spriteFilename,
+            typeFilename: config.typeFilename,
+            verbose: config.verbose,
+            generateReadme: config.generateReadme
+        };
+        // Write updated package.json
+        await fsExtra.writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+        console.log(chalk.green('\n✅ Added lemonLimeSvgs configuration to package.json'));
         console.log(chalk.yellow('📝 Configuration Preview:'));
-        console.log(chalk.gray(envContent));
-    }
-    else if (shouldAppendToEnv) {
-        // Read existing .env file
-        let existingEnvContent = '';
-        try {
-            existingEnvContent = await fsExtra.readFile(envPath, 'utf8');
-            // Add a newline at the end if it doesn't exist
-            if (!existingEnvContent.endsWith('\n')) {
-                existingEnvContent += '\n';
-            }
-            // Add a comment to separate the SVG configuration
-            existingEnvContent += '\n# Lemon Lime SVGs Configuration\n';
-            // Append the SVG configuration
-            await fsExtra.writeFile(envPath, existingEnvContent + envContent);
-            console.log(chalk.green('\n✅ Appended SVG configuration to .env file'));
-            console.log(chalk.yellow('📝 Configuration Preview:'));
-            console.log(chalk.gray(envContent));
-        }
-        catch (error) {
-            console.error('Error reading or updating .env file:', error);
-            process.exit(1);
-        }
+        console.log(chalk.gray(JSON.stringify(pkg.lemonLimeSvgs, null, 2)));
     }
     else {
         console.log('');
@@ -328,6 +386,41 @@ SVG_GENERATE_README=${config.generateReadme}
         process.exit(0);
     }
     console.log(chalk.green('✅ Created required directories'));
+    // Ask if they want to install the Icon component
+    const rlComponent = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+    const installComponentAnswer = await rlComponent.question(chalk.cyan(`🍋 Would you like to install an Icon component for your project? ${chalk.gray('(y/N)')}: `));
+    rlComponent.close();
+    if (installComponentAnswer.toLowerCase() === 'y') {
+        // Determine the framework from the earlier choice
+        let detectedFramework = null;
+        switch (frameworkChoice) {
+            case '1': // Next.js (Pages Router)
+            case '2': // Next.js (App Router)
+            case '6': // React + Vite
+                detectedFramework = 'react';
+                break;
+            case '3': // Remix
+                detectedFramework = 'react';
+                break;
+            case '4': // SvelteKit
+                detectedFramework = 'svelte';
+                break;
+            case '5': // Astro
+                detectedFramework = 'astro';
+                break;
+        }
+        if (detectedFramework) {
+            console.log(chalk.cyan(`\n🍋 Installing ${detectedFramework} Icon component...`));
+            await installComponent(detectedFramework);
+        }
+        else {
+            console.log(chalk.cyan(`\n🍋 Installing Icon component...`));
+            await installComponent();
+        }
+    }
     console.log(chalk.green(`🎉 Setup complete! You can now add SVG files to ${chalk.cyan(config.inputDir)}/\n`));
 }
 export default main;

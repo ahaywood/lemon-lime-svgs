@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "ESNext",
-    "lib": ["ES2020"],
+    "lib": ["ES2020", "DOM"],
     "declaration": true,
     "outDir": "./dist",
     "rootDir": "./src",
@@ -12,7 +12,8 @@
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "Node",
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "jsx": "react-jsx"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]

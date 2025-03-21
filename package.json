@@ -1,6 +1,6 @@
 {
   "name": "lemon-lime-svgs",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "an npm package for converting a folder of svg icons into a single sprite",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,7 +9,9 @@
     "test:watch": "jest --watch",
     "build": "tsc",
     "prepare": "npm run build",
-    "icons": "tsx ./src/index.mts"
+    "icons": "tsx ./src/index.mts",
+    "migrate": "tsx ./src/migrate.mts",
+    "component": "tsx ./src/install-component.mts"
   },
   "repository": {
     "type": "git",
@@ -27,21 +29,34 @@
   "homepage": "https://github.com/ahaywood/lemon-lime-sprite#readme",
   "dependencies": {
     "chalk": "^5.4.1",
-    "dotenv": "^16.4.7",
     "fs-extra": "^11.2.0",
     "glob": "^11.0.0",
+    "inquirer": "^9.2.15",
     "node-html-parser": "^6.1.13",
     "tsx": "^4.19.2"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
+    "@types/inquirer": "^9.0.7",
     "@types/jest": "^29.5.12",
     "@types/node": "^22.9.3",
+    "dotenv": "^16.4.7",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.2"
   },
   "bin": {
-    "lemon-lime-svgs": "./dist/cli.mjs"
+    "lemon-lime-svgs": "./dist/cli.mjs",
+    "lemon-lime-svgs-migrate": "./dist/cli-migrate.mjs",
+    "lemon-lime-svgs-component": "./dist/cli-component.mjs"
   },
-  "type": "module"
+  "type": "module",
+  "lemonLimeSvgs": {
+    "inputDir": "other/svg-icons",
+    "outputDir": "public/images/icons",
+    "typesDir": "src/types",
+    "spriteFilename": "sprite.svg",
+    "typeFilename": "name.d.ts",
+    "verbose": false,
+    "generateReadme": false
+  }
 }
