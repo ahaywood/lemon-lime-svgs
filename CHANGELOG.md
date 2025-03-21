@@ -4,7 +4,7 @@ _released `2025-03-21`_
 
 ## Breaking Changes
 
-- Moved configuration from `.env` file to `package.json` under the `lemonLimeSvgs` key
+- Moved configuration from `.env` file to `package.json` under the `lemonLimeSvgs` key. Needed to be able to commit the configuration to the repository.
 - Added migration script (`npx lemon-lime-svgs migrate`) to help users move from `.env` to `package.json`
 
 ## New Features
@@ -14,6 +14,7 @@ _released `2025-03-21`_
 - Added support for React, Svelte, and Astro components
 - Added option to install additional framework components when using Astro
 - Added component installation option to the setup wizard
+- Added `--y` flag to setup command for non-interactive installation with default values
 - Added overwrite protection when installing components to prevent accidental overwrites
 - Added automatic configuration check that prompts users to run setup or migration if needed
 
@@ -22,6 +23,7 @@ _released `2025-03-21`_
 - Updated TypeScript configuration to support JSX
 - Improved error handling and user feedback
 - Enhanced documentation with new features and usage examples
+- Changed the default values (verbose logging set to true, README generation set to false, default script to `icons`)
 
 # 1.1.0
 
