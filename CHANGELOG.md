@@ -1,3 +1,11 @@
+# 2.0.1
+
+_released `2025-03-31`_
+
+## Bug Fixes
+
+- Fixed dependency issue by moving `dotenv` from devDependencies to dependencies to ensure it's available when running setup via npx
+
 # 2.0.0
 
 _released `2025-03-21`_

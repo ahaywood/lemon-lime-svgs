@@ -1,6 +1,6 @@
 {
   "name": "lemon-lime-svgs",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "an npm package for converting a folder of svg icons into a single sprite",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -29,6 +29,7 @@
   "homepage": "https://github.com/ahaywood/lemon-lime-sprite#readme",
   "dependencies": {
     "chalk": "^5.4.1",
+    "dotenv": "^16.4.7",
     "fs-extra": "^11.2.0",
     "glob": "^11.0.0",
     "inquirer": "^9.2.15",
@@ -40,7 +41,6 @@
     "@types/inquirer": "^9.0.7",
     "@types/jest": "^29.5.12",
     "@types/node": "^22.9.3",
-    "dotenv": "^16.4.7",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.2"
   },
