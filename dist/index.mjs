@@ -272,7 +272,8 @@ async function setup() {
     console.log(chalk.yellow('🍋 Setting up SVG Sprite Builder configuration...\n'));
     // Ask for framework first
     let frameworkChoice = '0'; // Default to custom configuration
-    if (!useDefaults) {
+    if (!useDefaults && !useDefaultWithFramework) {
+        // Normal interactive mode - ask for framework
         console.log(chalk.cyan('Available frameworks:'));
         console.log(chalk.gray('  1. Next.js (Pages Router)'));
         console.log(chalk.gray('  2. Next.js (App Router)'));
@@ -285,7 +286,7 @@ async function setup() {
         frameworkChoice = await rl.question(chalk.cyan('🍋 Select your framework (0-6): '));
         console.log('');
     }
-    else if (useDefaultWithFramework) {
+    else if (useDefaultWithFramework && !useDefaults) {
         // With --default/-d flag, ask for framework but use defaults for everything else
         console.log(chalk.cyan('Available frameworks:'));
         console.log(chalk.gray('  1. Next.js (Pages Router)'));
@@ -301,6 +302,7 @@ async function setup() {
         console.log(chalk.cyan('🍋 Using default configuration values for selected framework'));
     }
     else {
+        // --y flag or conflicting flags - use default custom configuration
         console.log(chalk.cyan('🍋 Using default configuration (custom)'));
     }
     // Create a copy of the base config
@@ -451,7 +453,7 @@ async function setup() {
     // Handle component installation
     let shouldInstallComponent = false;
     if (useDefaults) {
-        // When using --y flag, don't install component by default
+        // When using --y flag (or conflicting flags), don't install component by default
         console.log(chalk.cyan('🍋 Skipping Icon component installation with --y flag.'));
         console.log(chalk.gray('  You can install components later with: npx lemon-lime-svgs component'));
     }
@@ -466,7 +468,7 @@ async function setup() {
         }
     }
     else {
-        // Ask if they want to install the Icon component
+        // Interactive mode - ask if they want to install the Icon component
         const rlComponent = readline.createInterface({
             input: process.stdin,
             output: process.stdout
