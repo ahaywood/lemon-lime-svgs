@@ -147,7 +147,7 @@ export async function installComponent(preselectedFramework?: 'react' | 'svelte'
 function getDefaultComponentPath(framework: string): string {
   switch (framework) {
     case 'react':
-      return 'src/components/Icon.tsx'
+      return 'src/app/components/Icon.tsx'
     case 'svelte':
       return 'src/lib/components/Icon.svelte'
     case 'astro':
