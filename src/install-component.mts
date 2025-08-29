@@ -113,9 +113,10 @@ export async function installComponent(preselectedFramework?: 'react' | 'svelte'
   ])
   
   // Install main component
-  await installComponentFile(framework, componentPath)
+  const mainComponentInstalled = await installComponentFile(framework, componentPath)
   
   // Install additional component if needed
+  let additionalComponentInstalled = true
   if (additionalFramework) {
     const additionalPath = getDefaultComponentPath(additionalFramework)
     
@@ -128,11 +129,16 @@ export async function installComponent(preselectedFramework?: 'react' | 'svelte'
       }
     ])
     
-    await installComponentFile(additionalFramework, additionalComponentPath)
+    additionalComponentInstalled = await installComponentFile(additionalFramework, additionalComponentPath)
   }
   
-  console.log(chalk.green('\n🎉 Component installation complete!'))
-  console.log(chalk.cyan('\nYou can now use the Icon component in your project.'))
+  // Show success message only if at least one component was installed
+  if (mainComponentInstalled || (additionalFramework && additionalComponentInstalled)) {
+    console.log(chalk.green('\n🎉 Component installation complete!'))
+    console.log(chalk.cyan('\nYou can now use the Icon component in your project.'))
+  } else {
+    console.log(chalk.yellow('\n⚠️ No components were installed.'))
+  }
 }
 
 /**
@@ -154,13 +160,24 @@ function getDefaultComponentPath(framework: string): string {
 /**
  * Install component file
  */
-async function installComponentFile(framework: string, componentPath: string): Promise<void> {
+async function installComponentFile(framework: string, componentPath: string): Promise<boolean> {
   try {
     // Get template content
     const templateContent = getTemplateContent(framework)
     
     // Ensure directory exists
     const componentDir = path.dirname(componentPath)
+    
+    // Check if the directory path exists as a file
+    if (await fsExtra.pathExists(componentDir)) {
+      const stats = await fsExtra.stat(componentDir)
+      if (stats.isFile()) {
+        console.log(chalk.red(`❌ Cannot create directory at ${componentDir} because a file already exists there.`))
+        console.log(chalk.yellow(`   Please remove the file or choose a different path.`))
+        return false
+      }
+    }
+    
     await fsExtra.ensureDir(componentDir)
     
     // Check if file already exists
@@ -176,7 +193,7 @@ async function installComponentFile(framework: string, componentPath: string): P
       
       if (!overwrite) {
         console.log(chalk.yellow('⚠️ Installation skipped. File not overwritten.'))
-        return
+        return false
       }
     }
     
@@ -184,6 +201,7 @@ async function installComponentFile(framework: string, componentPath: string): P
     await fsExtra.writeFile(componentPath, templateContent)
     
     console.log(chalk.green(`✅ Installed ${framework} component at ${componentPath}`))
+    return true
   } catch (error) {
     console.error(`Error installing ${framework} component:`, error)
     throw error
