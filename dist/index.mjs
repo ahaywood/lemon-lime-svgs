@@ -81,7 +81,7 @@ const frameworkConfigs = {
     'react-vite': {
         inputDir: './other/svg-icons',
         outputDir: './public/images/icons',
-        typesDir: './src/types',
+        typesDir: './types',
         typeFilename: 'icons.d.ts'
     }
 };
