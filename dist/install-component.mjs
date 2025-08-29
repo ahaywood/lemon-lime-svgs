@@ -18,12 +18,26 @@ export async function installComponent(preselectedFramework) {
         console.log(chalk.red('❌ No package.json file found. Cannot determine project type.'));
         return;
     }
-    // Read package.json to determine project type
+    // Read package.json to determine project type and load configuration
     const pkgContent = await fsExtra.readFile(pkgPath, 'utf8');
     const pkg = JSON.parse(pkgContent);
+    // Load lemonLimeSvgs configuration with defaults
+    const baseDefaultConfig = {
+        inputDir: 'other/svg-icons',
+        outputDir: 'public/images/icons',
+        typesDir: 'src/types',
+        spriteFilename: 'sprite.svg',
+        typeFilename: 'name.d.ts',
+        verbose: true,
+        generateReadme: false
+    };
+    const config = {
+        ...baseDefaultConfig,
+        ...(pkg.lemonLimeSvgs || {})
+    };
     // Try to determine project type from dependencies
     let detectedFramework = null;
-    const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+    const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
     if (deps.react) {
         detectedFramework = 'react';
     }
@@ -93,7 +107,7 @@ export async function installComponent(preselectedFramework) {
         }
     ]);
     // Install main component
-    await installComponentFile(framework, componentPath);
+    await installComponentFile(framework, componentPath, config);
     // Install additional component if needed
     if (additionalFramework) {
         const additionalPath = getDefaultComponentPath(additionalFramework);
@@ -105,7 +119,7 @@ export async function installComponent(preselectedFramework) {
                 default: additionalPath
             }
         ]);
-        await installComponentFile(additionalFramework, additionalComponentPath);
+        await installComponentFile(additionalFramework, additionalComponentPath, config);
     }
     console.log(chalk.green('\n🎉 Component installation complete!'));
     console.log(chalk.cyan('\nYou can now use the Icon component in your project.'));
@@ -128,10 +142,10 @@ function getDefaultComponentPath(framework) {
 /**
  * Install component file
  */
-async function installComponentFile(framework, componentPath) {
+async function installComponentFile(framework, componentPath, config) {
     try {
-        // Get template content
-        const templateContent = getTemplateContent(framework);
+        // Get template content with dynamic import path for React
+        const templateContent = getTemplateContent(framework, componentPath, config);
         // Ensure directory exists
         const componentDir = path.dirname(componentPath);
         await fsExtra.ensureDir(componentDir);
@@ -162,10 +176,10 @@ async function installComponentFile(framework, componentPath) {
 /**
  * Get template content based on framework
  */
-function getTemplateContent(framework) {
+function getTemplateContent(framework, componentPath, config) {
     switch (framework) {
         case 'react':
-            return templates.react;
+            return getReactTemplate(componentPath, config);
         case 'svelte':
             return templates.svelte;
         case 'astro':
@@ -173,6 +187,34 @@ function getTemplateContent(framework) {
         default:
             throw new Error(`Unknown framework: ${framework}`);
     }
+}
+/**
+ * Generate React template with dynamic IconName import
+ */
+function getReactTemplate(componentPath, config) {
+    // Calculate relative path from component to types file
+    const componentDir = path.dirname(componentPath);
+    const typesFile = path.join(config.typesDir, config.typeFilename);
+    const relativePath = path.relative(componentDir, typesFile);
+    // Convert to proper import path (remove .d.ts extension and normalize separators)
+    const importPath = relativePath.replace(/\.d\.ts$/, '').replace(/\\/g, '/');
+    return `import { IconName } from '${importPath}';
+
+interface Props {
+  size?: number;
+  id: IconName;
+  className?: string;
+}
+
+const Icon = ({ className, size = 24, id }: Props) => {
+  return (
+    <svg width={size} height={size} className={className}>
+      <use href={\`/images/icons/sprite.svg#\${id}\`}></use>
+    </svg>
+  );
+};
+
+export default Icon;`;
 }
 // For ES modules, we can't use require.main === module
 // Instead, we'll check if this file is being executed directly via a CLI command
