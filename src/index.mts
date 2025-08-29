@@ -547,12 +547,11 @@ async function setup() {
   console.log(chalk.green('✅ Created required directories'))
 
   // Handle component installation
-  let shouldInstallComponent = false;
+  let shouldInstallComponent = true; // Default to YES
   
   if (useDefaults) {
-    // When using --y flag, don't install component by default
-    console.log(chalk.cyan('🍋 Skipping Icon component installation with --y flag.'))
-    console.log(chalk.gray('  You can install components later with: npx lemon-lime-svgs component'))
+    // When using --y flag, install component by default
+    console.log(chalk.cyan('🍋 Installing Icon component with default settings.'))
   } else {
     // Ask if they want to install the Icon component
     const rlComponent = readline.createInterface({
@@ -560,10 +559,11 @@ async function setup() {
       output: process.stdout
     })
     
-    const installComponentAnswer = await rlComponent.question(chalk.cyan(`🍋 Would you like to install an Icon component for your project? ${chalk.gray('(y/N)')}: `))
+    const installComponentAnswer = await rlComponent.question(chalk.cyan(`🍋 Would you like to install an Icon component for your project? ${chalk.gray('(Y/n)')}: `))
     rlComponent.close()
     
-    shouldInstallComponent = installComponentAnswer.toLowerCase() === 'y';
+    // Default to 'yes' if empty response, otherwise check for explicit 'no'
+    shouldInstallComponent = installComponentAnswer.trim() === '' || installComponentAnswer.toLowerCase() !== 'n';
   }
 
   if (shouldInstallComponent) {
