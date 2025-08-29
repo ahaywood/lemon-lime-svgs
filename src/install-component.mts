@@ -12,6 +12,34 @@ interface ComponentOptions {
   componentPath: string
 }
 
+interface PackageJson {
+  name?: string
+  version?: string
+  scripts?: Record<string, string>
+  dependencies?: Record<string, string>
+  devDependencies?: Record<string, string>
+  lemonLimeSvgs?: {
+    inputDir?: string
+    outputDir?: string
+    typesDir?: string
+    spriteFilename?: string
+    typeFilename?: string
+    verbose?: boolean
+    generateReadme?: boolean
+  }
+  [key: string]: unknown
+}
+
+interface IconBuilderConfig {
+  inputDir: string
+  outputDir: string
+  typesDir: string
+  spriteFilename: string
+  typeFilename: string
+  verbose: boolean
+  generateReadme: boolean
+}
+
 /**
  * Install icon component into the user's project
  * @param preselectedFramework Optional framework to use, skipping the framework selection prompt
@@ -29,14 +57,30 @@ export async function installComponent(preselectedFramework?: 'react' | 'svelte'
     return
   }
   
-  // Read package.json to determine project type
+  // Read package.json to determine project type and load configuration
   const pkgContent = await fsExtra.readFile(pkgPath, 'utf8')
-  const pkg = JSON.parse(pkgContent)
+  const pkg = JSON.parse(pkgContent) as PackageJson
+  
+  // Load lemonLimeSvgs configuration with defaults
+  const baseDefaultConfig: IconBuilderConfig = {
+    inputDir: 'other/svg-icons',
+    outputDir: 'public/images/icons',
+    typesDir: 'src/types',
+    spriteFilename: 'sprite.svg',
+    typeFilename: 'name.d.ts',
+    verbose: true,
+    generateReadme: false
+  }
+  
+  const config: IconBuilderConfig = {
+    ...baseDefaultConfig,
+    ...(pkg.lemonLimeSvgs || {})
+  }
   
   // Try to determine project type from dependencies
   let detectedFramework: 'react' | 'svelte' | 'astro' | null = null
   
-  const deps = { ...pkg.dependencies, ...pkg.devDependencies }
+  const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) }
   
   if (deps.react) {
     detectedFramework = 'react'
@@ -113,7 +157,7 @@ export async function installComponent(preselectedFramework?: 'react' | 'svelte'
   ])
   
   // Install main component
-  await installComponentFile(framework, componentPath)
+  await installComponentFile(framework, componentPath, config)
   
   // Install additional component if needed
   if (additionalFramework) {
@@ -128,7 +172,7 @@ export async function installComponent(preselectedFramework?: 'react' | 'svelte'
       }
     ])
     
-    await installComponentFile(additionalFramework, additionalComponentPath)
+    await installComponentFile(additionalFramework, additionalComponentPath, config)
   }
   
   console.log(chalk.green('\n🎉 Component installation complete!'))
@@ -154,10 +198,10 @@ function getDefaultComponentPath(framework: string): string {
 /**
  * Install component file
  */
-async function installComponentFile(framework: string, componentPath: string): Promise<void> {
+async function installComponentFile(framework: string, componentPath: string, config: IconBuilderConfig): Promise<void> {
   try {
-    // Get template content
-    const templateContent = getTemplateContent(framework)
+    // Get template content with dynamic import path for React
+    const templateContent = getTemplateContent(framework, componentPath, config)
     
     // Ensure directory exists
     const componentDir = path.dirname(componentPath)
@@ -193,10 +237,10 @@ async function installComponentFile(framework: string, componentPath: string): P
 /**
  * Get template content based on framework
  */
-function getTemplateContent(framework: string): string {
+function getTemplateContent(framework: string, componentPath: string, config: IconBuilderConfig): string {
   switch (framework) {
     case 'react':
-      return templates.react
+      return getReactTemplate(componentPath, config)
     case 'svelte':
       return templates.svelte
     case 'astro':
@@ -204,6 +248,37 @@ function getTemplateContent(framework: string): string {
     default:
       throw new Error(`Unknown framework: ${framework}`)
   }
+}
+
+/**
+ * Generate React template with dynamic IconName import
+ */
+function getReactTemplate(componentPath: string, config: IconBuilderConfig): string {
+  // Calculate relative path from component to types file
+  const componentDir = path.dirname(componentPath)
+  const typesFile = path.join(config.typesDir, config.typeFilename)
+  const relativePath = path.relative(componentDir, typesFile)
+  
+  // Convert to proper import path (remove .d.ts extension and normalize separators)
+  const importPath = relativePath.replace(/\.d\.ts$/, '').replace(/\\/g, '/')
+  
+  return `import { IconName } from '${importPath}';
+
+interface Props {
+  size?: number;
+  id: IconName;
+  className?: string;
+}
+
+const Icon = ({ className, size = 24, id }: Props) => {
+  return (
+    <svg width={size} height={size} className={className}>
+      <use href={\`/images/icons/sprite.svg#\${id}\`}></use>
+    </svg>
+  );
+};
+
+export default Icon;`
 }
 
 // For ES modules, we can't use require.main === module
