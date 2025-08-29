@@ -4,6 +4,17 @@ import { migrate } from './migrate.mjs';
 import { installComponent } from './install-component.mjs';
 import chalk from 'chalk';
 const command = process.argv[2];
+// Handle help commands
+if (command === 'help' || command === '--help' || command === '-h') {
+    console.log('Available commands:');
+    console.log(chalk.cyan('  lemon-lime-svgs      ') + chalk.gray('- Generate sprites'));
+    console.log(chalk.cyan('  lemon-lime-svgs setup ') + chalk.gray('- Set up directory structure'));
+    console.log(chalk.cyan('    --y or -y          ') + chalk.gray('- Use all defaults (non-interactive)'));
+    console.log(chalk.cyan('    --default or -d    ') + chalk.gray('- Ask for framework, use defaults for everything else'));
+    console.log(chalk.cyan('  lemon-lime-svgs migrate ') + chalk.gray('- Migrate config from .env to package.json'));
+    console.log(chalk.cyan('  lemon-lime-svgs component ') + chalk.gray('- Install icon component'));
+    process.exit(0);
+}
 console.log(chalk.yellow('🍋🍋 LEMON LIME SVGs 🍋🍋\n'));
 switch (command) {
     case 'setup':
@@ -35,6 +46,8 @@ switch (command) {
         console.log('Available commands:');
         console.log(chalk.cyan('  lemon-lime-svgs      ') + chalk.gray('- Generate sprites'));
         console.log(chalk.cyan('  lemon-lime-svgs setup ') + chalk.gray('- Set up directory structure'));
+        console.log(chalk.cyan('    --y or -y          ') + chalk.gray('- Use all defaults (non-interactive)'));
+        console.log(chalk.cyan('    --default or -d    ') + chalk.gray('- Ask for framework, use defaults for everything else'));
         console.log(chalk.cyan('  lemon-lime-svgs migrate ') + chalk.gray('- Migrate config from .env to package.json'));
         console.log(chalk.cyan('  lemon-lime-svgs component ') + chalk.gray('- Install icon component'));
         process.exit(1);

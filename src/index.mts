@@ -366,6 +366,9 @@ async function setup() {
   // Check if --y flag is provided
   const useDefaults = process.argv.includes('--y') || process.argv.includes('-y')
   
+  // Check if --default/-d flag is provided (ask for framework but use defaults for everything else)
+  const useDefaultWithFramework = process.argv.includes('--default') || process.argv.includes('-d')
+  
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
@@ -389,6 +392,21 @@ async function setup() {
 
     frameworkChoice = await rl.question(chalk.cyan('🍋 Select your framework (0-6): '))
     console.log('')
+  } else if (useDefaultWithFramework) {
+    // With --default/-d flag, ask for framework but use defaults for everything else
+    console.log(chalk.cyan('Available frameworks:'))
+    console.log(chalk.gray('  1. Next.js (Pages Router)'))
+    console.log(chalk.gray('  2. Next.js (App Router)'))
+    console.log(chalk.gray('  3. Remix'))
+    console.log(chalk.gray('  4. SvelteKit'))
+    console.log(chalk.gray('  5. Astro'))
+    console.log(chalk.gray('  6. React + Vite'))
+    console.log(chalk.gray('  0. Custom configuration'))
+    console.log('')
+
+    frameworkChoice = await rl.question(chalk.cyan('🍋 Select your framework (0-6): '))
+    console.log('')
+    console.log(chalk.cyan('🍋 Using default configuration values for selected framework'))
   } else {
     console.log(chalk.cyan('🍋 Using default configuration (custom)'))
   }
@@ -424,7 +442,7 @@ async function setup() {
   // Rest of the setup using the selected configDefaults...
   let config;
   
-  if (useDefaults) {
+  if (useDefaults || useDefaultWithFramework) {
     // Use defaults without prompting
     config = {
       inputDir: configDefaults.inputDir,
@@ -436,7 +454,10 @@ async function setup() {
       generateReadme: configDefaults.generateReadme
     };
     
-    console.log(chalk.cyan('🍋 Using default configuration values:'));
+    if (!useDefaultWithFramework) {
+      // Only show this for --y flag, not for --default/-d flag (already shown above)
+      console.log(chalk.cyan('🍋 Using default configuration values:'));
+    }
     console.log(chalk.gray(`  Input directory: ${config.inputDir}`));
     console.log(chalk.gray(`  Output directory: ${config.outputDir}`));
     console.log(chalk.gray(`  Types directory: ${config.typesDir}`));
@@ -553,6 +574,14 @@ async function setup() {
     // When using --y flag, don't install component by default
     console.log(chalk.cyan('🍋 Skipping Icon component installation with --y flag.'))
     console.log(chalk.gray('  You can install components later with: npx lemon-lime-svgs component'))
+  } else if (useDefaultWithFramework) {
+    // When using --default/-d flag, install component by default if framework supports it
+    if (frameworkChoice !== '0') {
+      shouldInstallComponent = true;
+      console.log(chalk.cyan('🍋 Will install Icon component for selected framework (default behavior).'))
+    } else {
+      console.log(chalk.cyan('🍋 Skipping Icon component installation for custom configuration.'))
+    }
   } else {
     // Ask if they want to install the Icon component
     const rlComponent = readline.createInterface({
